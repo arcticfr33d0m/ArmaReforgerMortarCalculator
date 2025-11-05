@@ -27,56 +27,30 @@ def parse_grid(grid_str):
 def calculate_target_coords(fo_grid_str, fo_azimuth_deg, fo_dist, fo_elev_diff, corr_lr, corr_add_drop):
     """
     Calculates the target's coordinates based on FO data and corrections.
-    This version uses vector addition for a more accurate calculation.
+    Corrections (Add/Drop, Left/Right) are applied relative to the FO's perspective.
     """
     fo_easting, fo_northing = parse_grid(fo_grid_str)
     azimuth_rad = math.radians(fo_azimuth_deg)
-    
+
+    # Calculate initial target position based on FO data
     initial_target_easting = fo_easting + fo_dist * math.sin(azimuth_rad)
     initial_target_northing = fo_northing + fo_dist * math.cos(azimuth_rad)
 
-    if corr_lr == 0 and corr_add_drop == 0:
-        return initial_target_easting, initial_target_northing
+    # Apply Add/Drop correction along the FO's line of sight
+    # Positive corr_add_drop moves target further from FO, negative moves closer
+    corrected_easting = initial_target_easting + corr_add_drop * math.sin(azimuth_rad)
+    corrected_northing = initial_target_northing + corr_add_drop * math.cos(azimuth_rad)
 
-    # Let the new function determine the best correction
-    return calculate_best_correction(initial_target_easting, initial_target_northing, azimuth_rad, corr_lr, corr_add_drop)
+    # Apply Left/Right correction perpendicular to the FO's line of sight
+    # Positive corr_lr moves target to the right of FO's azimuth
+    # Negative corr_lr moves target to the left of FO's azimuth
+    # Azimuth + 90 degrees (pi/2 radians) for right, Azimuth - 90 degrees for left
+    # sin(azimuth + pi/2) = cos(azimuth)
+    # cos(azimuth + pi/2) = -sin(azimuth)
+    corrected_easting += corr_lr * math.cos(azimuth_rad)
+    corrected_northing -= corr_lr * math.sin(azimuth_rad)
 
-def calculate_best_correction(initial_e, initial_n, fo_azimuth_rad, lr_corr, ad_corr):
-    """
-    Calculates the four possible correction points and returns the one
-    closest to the original uncorrected target location.
-    """
-    possible_corrections = [
-        (lr_corr, ad_corr),
-        (-lr_corr, ad_corr),
-        (lr_corr, -ad_corr),
-        (-lr_corr, -ad_corr)
-    ]
-
-    best_point = None
-    min_dist_sq = float('inf')
-
-    for lr, ad in possible_corrections:
-        # Calculate the correction vectors
-        ad_e = ad * math.sin(fo_azimuth_rad)
-        ad_n = ad * math.cos(fo_azimuth_rad)
-        
-        lr_azimuth = fo_azimuth_rad + (math.pi / 2)
-        lr_e = lr * math.sin(lr_azimuth)
-        lr_n = lr * math.cos(lr_azimuth)
-
-        # Apply correction
-        corrected_e = initial_e + ad_e + lr_e
-        corrected_n = initial_n + ad_n + lr_n
-
-        # Check distance from the *original* point
-        dist_sq = (corrected_e - initial_e)**2 + (corrected_n - initial_n)**2
-        
-        if dist_sq < min_dist_sq:
-            min_dist_sq = dist_sq
-            best_point = (corrected_e, corrected_n)
-            
-    return best_point
+    return corrected_easting, corrected_northing
 
 def find_valid_solutions(faction, ammo, distance, elev_diff):
     """Finds all valid firing solutions for a given ammo, distance, and elevation change."""
@@ -105,8 +79,8 @@ def find_valid_solutions(faction, ammo, distance, elev_diff):
                 base_tof = interpolate(distance, r1, d1["tof"], r2, d2["tof"])
                 base_delev = interpolate(distance, r1, d1["delev"], r2, d2["delev"])
                 
-                elevation_correction = (elev_diff / 100) * base_delev
-                final_elevation = base_elev + elevation_correction
+                # Apply elevation correction: subtract for uphill (positive elev_diff), add for downhill (negative elev_diff)
+                final_elevation = base_elev - (elev_diff / 100) * base_delev
                 
                 valid_solutions.append({
                     "charge": charge,

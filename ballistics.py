@@ -8,7 +8,7 @@ MILS_PER_REVOLUTION = {
 BALLISTIC_DATA = {
     "NATO": {
         "M821 HE": {
-            0: {"dispersion": 6, "ranges": {
+            0: {"dispersion": 10, "ranges": {
                 50: {"elev": 1540, "tof": 13.2, "delev": 61},
                 100: {"elev": 1479, "tof": 13.2, "delev": 63},
                 150: {"elev": 1416, "tof": 13.0, "delev": 66},
@@ -18,7 +18,7 @@ BALLISTIC_DATA = {
                 350: {"elev": 1106, "tof": 11.7, "delev": 151},
                 400: {"elev": 955, "tof": 10.7, "delev": 0},
             }},
-            1: {"dispersion": 14, "ranges": {
+            1: {"dispersion": 23, "ranges": {
                 100: {"elev": 1547, "tof": 20.0, "delev": 28},
                 200: {"elev": 1492, "tof": 19.9, "delev": 27},
                 300: {"elev": 1437, "tof": 19.7, "delev": 29},
@@ -29,7 +29,7 @@ BALLISTIC_DATA = {
                 800: {"elev": 1085, "tof": 17.5, "delev": 57},
                 900: {"elev": 954, "tof": 16.1, "delev": 148},
             }},
-            2: {"dispersion": 24, "ranges": {
+            2: {"dispersion": 39, "ranges": {
                 200: {"elev": 1538, "tof": 26.6, "delev": 15},
                 300: {"elev": 1507, "tof": 26.5, "delev": 16},
                 400: {"elev": 1475, "tof": 26.4, "delev": 16},
@@ -46,7 +46,7 @@ BALLISTIC_DATA = {
                 1500: {"elev": 1009, "tof": 22.3, "delev": 43},
                 1600: {"elev": 912, "tof": 20.9, "delev": 109},
             }},
-            3: {"dispersion": 33, "ranges": {
+            3: {"dispersion": 54, "ranges": {
                 300: {"elev": 1534, "tof": 31.7, "delev": 12},
                 400: {"elev": 1511, "tof": 31.6, "delev": 11},
                 500: {"elev": 1489, "tof": 31.6, "delev": 12},
@@ -69,7 +69,7 @@ BALLISTIC_DATA = {
                 2200: {"elev": 931, "tof": 25.3, "delev": 46},
                 2300: {"elev": 801, "tof": 22.7, "delev": 0},
             }},
-            4: {"dispersion": 42, "ranges": {
+            4: {"dispersion": 69, "ranges": {
                 400: {"elev": 1531, "tof": 36.3, "delev": 9},
                 500: {"elev": 1514, "tof": 36.2, "delev": 9},
                 600: {"elev": 1496, "tof": 36.2, "delev": 9},
@@ -99,7 +99,7 @@ BALLISTIC_DATA = {
             }},
         },
         "M853A1 Illumination": {
-            1: {"dispersion": 11, "ranges": {
+            1: {"dispersion": 17, "ranges": {
                 200: {"elev": 1463, "tof": 18.1, "delev": 35},
                 250: {"elev": 1428, "tof": 18.0, "delev": 37},
                 300: {"elev": 1391, "tof": 17.9, "delev": 39},
@@ -128,7 +128,7 @@ BALLISTIC_DATA = {
                 1300: {"elev": 1005, "tof": 22.0, "delev": 47},
                 1400: {"elev": 900, "tof": 20.5, "delev": 98},
             }},
-            3: {"dispersion": 29, "ranges": {
+            3: {"dispersion": 48, "ranges": {
                 300: {"elev": 1521, "tof": 31.1, "delev": 14},
                 400: {"elev": 1494, "tof": 31.1, "delev": 14},
                 500: {"elev": 1466, "tof": 31.0, "delev": 14},
@@ -147,7 +147,7 @@ BALLISTIC_DATA = {
                 1800: {"elev": 962, "tof": 25.6, "delev": 67},
                 1900: {"elev": 875, "tof": 24.1, "delev": 0},
             }},
-            4: {"dispersion": 36, "ranges": {
+            4: {"dispersion": 59, "ranges": {
                 400: {"elev": 1515, "tof": 35.7, "delev": 11},
                 500: {"elev": 1493, "tof": 35.7, "delev": 11},
                 600: {"elev": 1471, "tof": 35.6, "delev": 11},
@@ -172,7 +172,7 @@ BALLISTIC_DATA = {
             }},
         },
         "M819 Smoke": {
-            1: {"dispersion": 11, "ranges": {
+            1: {"dispersion": 18, "ranges": {
                 200: {"elev": 1463, "tof": 17.7, "delev": 36},
                 250: {"elev": 1427, "tof": 17.6, "delev": 36},
                 300: {"elev": 1391, "tof": 17.5, "delev": 38},
@@ -186,7 +186,7 @@ BALLISTIC_DATA = {
                 700: {"elev": 982, "tof": 14.7, "delev": 160},
                 750: {"elev": 822, "tof": 13.0, "delev": 0},
             }},
-            2: {"dispersion": 20, "ranges": {
+            2: {"dispersion": 33, "ranges": {
                 200: {"elev": 1528, "tof": 24.8, "delev": 19},
                 300: {"elev": 1491, "tof": 24.7, "delev": 19},
                 400: {"elev": 1453, "tof": 24.6, "delev": 19},
@@ -201,7 +201,7 @@ BALLISTIC_DATA = {
                 1300: {"elev": 980, "tof": 20.5, "delev": 58},
                 1400: {"elev": 818, "tof": 18.0, "delev": 0},
             }},
-            3: {"dispersion": 28, "ranges": {
+            3: {"dispersion": 46, "ranges": {
                 300: {"elev": 1522, "tof": 29.6, "delev": 14},
                 400: {"elev": 1495, "tof": 29.6, "delev": 14},
                 500: {"elev": 1468, "tof": 29.5, "delev": 14},
@@ -220,7 +220,7 @@ BALLISTIC_DATA = {
                 1800: {"elev": 980, "tof": 24.5, "delev": 84},
                 1900: {"elev": 892, "tof": 23.0, "delev": 0},
             }},
-            4: {"dispersion": 35, "ranges": {
+            4: {"dispersion": 57, "ranges": {
                 400: {"elev": 1517, "tof": 33.6, "delev": 11},
                 500: {"elev": 1495, "tof": 33.5, "delev": 10},
                 600: {"elev": 1474, "tof": 33.5, "delev": 11},

@@ -1,3 +1,11 @@
+### Release Notes - v1.4.3
+
+#### 🐛 Bug Fixes
+*   **Elevation Correction Logic:** Corrected the elevation difference calculation. For uphill targets (positive elevation difference), `delev` is now subtracted from the base elevation. For downhill targets (negative elevation difference), `delev` is added to the base elevation. This ensures accurate firing solutions regardless of terrain.
+*   **FO Correction Logic:** Reworked the Left/Right and Add/Drop corrections to be applied relative to the Forward Observer's (FO) perspective. "Drop" now correctly moves the target closer to the FO (negative value), "Add" moves it further (positive value), "Left" moves it to the left of the FO's azimuth (negative value), and "Right" moves it to the right (positive value). This provides a more intuitive and accurate correction system.
+
+---
+
 ### Release Notes - v1.4.2
 
 #### ✨ New Features
@@ -11,7 +19,6 @@
     *   Logs only successfully calculated (green) TRP-mortar solutions as individual mission entries in the main "Fire Mission Log".
     *   Clears the in-memory mission log before batch calculation to show only current results (without affecting saved log files).
     *   **UI Performance Improvement:** Batch calculations now run more smoothly in the background, with only the TRP list status and mission log updating during the process. The map updates once at the end to show all calculated TRP targets.
-*   **TRP Button on Main UI:** The TRP button has been added to the main UI for ease of access.
 *   **Load TRPs from Log:** Added a "Load TRPs from Mission Log" button on the TRP tab.
     *   Allows importing TRP data from existing mission log files into the TRP list.
     *   Robustly handles various log formats and missing data.
