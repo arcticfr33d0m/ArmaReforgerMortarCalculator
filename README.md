@@ -49,8 +49,8 @@ The calculator includes a powerful map management system accessible via the **Se
 
 ### Advanced Targeting
 
-For rapid target acquisition, an advanced mode can be activated in the settings panel. This allows you to **right-click** directly on the map to set a target's location, bypassing the need for FO data.
+For rapid target acquisition, an advanced mode can be activated in the settings panel. This allows you to **right-click** directly on the map to set a target's location, bypassing the need for FO data. <<I HAVE HAD REPORTS THAT THIS SOMETIMES HANGS/BREAKS THE APPLICATION.
 
 ### Current Status & Notes
 
-*   **Fire Mission Corrections:** This feature is currently a work in progress and may not be reliable.
+*   **Fire Mission Corrections:** This feature is currently a work in progress and may not be reliable. v1.4.3 Update - THIS HAS NOW MOVED TO TESTING PHASE
