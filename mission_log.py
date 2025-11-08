@@ -31,7 +31,7 @@ class MissionLog:
         
         # Add Save and Load buttons to the right
         ttk.Button(action_frame, text="Save Log As...", command=self.app.save_log_as).pack(side="right", padx=5)
-        ttk.Button(action_frame, text="Load Log File", command=self.app.load_log_from_file).pack(side="right", padx=5)
+        ttk.Button(action_frame, text="Load File", command=self.app.load_file_smart).pack(side="right", padx=5)
 
         # --- Log Display Frame ---
         tree_frame = ttk.Frame(log_frame)

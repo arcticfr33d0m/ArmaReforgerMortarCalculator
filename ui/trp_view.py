@@ -151,7 +151,8 @@ class TRPView(ttk.Frame):
         ttk.Button(button_frame, text="Remove Selected TRP", command=self.remove_selected_trp).pack(side="left", padx=5)
         ttk.Button(button_frame, text="Clear All TRPs", command=self.clear_all_trps).pack(side="left", padx=5)
         ttk.Button(button_frame, text="Calculate All TRPs", command=self.calculate_all_trps).pack(side="right", padx=5)
-        ttk.Button(button_frame, text="Load TRPs from Mission Log", command=self.load_trps_from_log).pack(side="right", padx=5)
+        ttk.Button(button_frame, text="Save TRP List", command=self.save_trp_list).pack(side="right", padx=5)
+        ttk.Button(button_frame, text="Load File", command=self.app.load_file_smart).pack(side="right", padx=5)
 
         self.refresh_trp_list() # Initial population
 
@@ -229,70 +230,35 @@ class TRPView(ttk.Frame):
             return
         self.app.calculate_trps_from_list()
 
-    def load_trps_from_log(self):
-        file_path = filedialog.askopenfilename(
+    def save_trp_list(self):
+        """Saves the current list of TRPs to a JSON file."""
+        if not self.app.state.trp_input_vars:
+            messagebox.showinfo("No TRPs", "No TRPs to save.")
+            return
+
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".json",
             filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
-            title="Load Mission Log for TRPs"
+            title="Save TRP List As..."
         )
         if not file_path:
             return
 
         try:
-            with open(file_path, 'r') as f:
-                log_data = json.load(f)
-            
-            self.app.state.clear_trps() # Clear existing TRPs before loading new ones
+            trp_data_to_save = []
+            for trp_vars in self.app.state.trp_input_vars:
+                trp_data_to_save.append({
+                    "grid": trp_vars['grid'].get(),
+                    "elev": trp_vars['elev'].get(),
+                    "name": trp_vars['name'].get(),
+                    "status": trp_vars['status'].get()
+                })
 
-            for entry in log_data:
-                # Determine initial status based on log entry type
-                initial_status = "Loaded"
-                if entry.get("type") == "TRP_BATCH_RESULT":
-                    trp_result = entry.get("data", {})
-                    grid = str(trp_result.get("original_trp_grid", trp_result.get("Target Grid", ""))).replace(" ", "")
-                    elev_str = str(trp_result.get("Target Elevation", "")).replace(" m", "")
-                    name = trp_result.get("TRP Name", "")
-                    initial_status = trp_result.get("Status", "Loaded") # Use status from batch result
-                else:
-                    # Existing mission log entry
-                    grid_raw = entry.get("original_trp_grid") # Prioritize original_trp_grid
-                    if grid_raw is None:
-                        grid_raw = entry.get("calculated_target_grid")
-                        if grid_raw is None:
-                            grid_raw = entry.get("target_grid_str", "")
-                    grid = str(grid_raw).replace(" ", "")
-
-                    elev_raw = entry.get("target_elev")
-                    if elev_raw is None:
-                        elev_raw = entry.get("fo_elev", 100)
-                    elev_str = str(elev_raw).replace(" m", "")
-
-                    name = entry.get("target_name")
-                    if not name:
-                        name = entry.get("fo_id", f"TRP from Log {len(self.app.state.trp_input_vars) + 1}")
-                
-                try:
-                    elev = float(elev_str)
-                except ValueError:
-                    elev = 100
-
-                if grid:
-                    self.app.state.add_trp()
-                    new_trp_vars = self.app.state.get_trp_vars(len(self.app.state.trp_input_vars) - 1)
-                    new_trp_vars['grid'].set(format_grid_10_digit(grid))
-                    new_trp_vars['elev'].set(elev)
-                    new_trp_vars['name'].set(name)
-                    new_trp_vars['status'].set(initial_status) # Set initial status
-                else:
-                    print(f"Skipping log entry due to missing grid: {entry}")
-                    messagebox.showwarning("Load Warning", f"Skipped an entry from the log due to missing grid data: {name}")
-
-            self.refresh_trp_list()
-            messagebox.showinfo("Success", f"Loaded {len(self.app.state.trp_input_vars)} TRPs from log file.")
-
-        except json.JSONDecodeError:
-            messagebox.showerror("Error", "Invalid JSON file. Please select a valid mission log.")
+            with open(file_path, 'w') as f:
+                json.dump(trp_data_to_save, f, indent=4)
+            messagebox.showinfo("Success", f"TRP list saved to {file_path}")
         except Exception as e:
-            messagebox.showerror("Error", f"An error occurred while loading TRPs: {e}")
+            messagebox.showerror("Error", f"Failed to save TRP list: {e}")
 
     def load_valid_trp_to_main(self):
         all_trps_data = []
@@ -321,6 +287,28 @@ class TRPView(ttk.Frame):
             messagebox.showinfo("TRP Loaded", f"TRP '{selected_trp['name']}' loaded to Main tab.")
             self.app.calculate_all() # Auto-calculate after loading
     
+    def load_trp_list_from_data(self, loaded_trps):
+        """Loads a list of TRPs from provided data (used by load_file_smart)."""
+        if not isinstance(loaded_trps, list):
+            messagebox.showerror("Error", "Invalid TRP list format. Expected a list of TRP objects.")
+            return
+
+        self.app.state.clear_trps() # Clear existing TRPs
+
+        for trp_data in loaded_trps:
+            if all(key in trp_data for key in ['grid', 'elev', 'name', 'status']):
+                self.app.state.add_trp()
+                new_trp_vars = self.app.state.get_trp_vars(len(self.app.state.trp_input_vars) - 1)
+                new_trp_vars['grid'].set(trp_data['grid'])
+                new_trp_vars['elev'].set(trp_data['elev'])
+                new_trp_vars['name'].set(trp_data['name'])
+                new_trp_vars['status'].set(trp_data['status'])
+            else:
+                messagebox.showwarning("Load Warning", f"Skipped invalid TRP entry: {trp_data}. Missing one or more of 'grid', 'elev', 'name', 'status'.")
+
+        self.refresh_trp_list()
+        messagebox.showinfo("Success", f"Loaded {len(self.app.state.trp_input_vars)} TRPs.")
+
     def on_trp_selected(self, event):
         selected_items = self.trp_tree.selection()
         if selected_items:

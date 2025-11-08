@@ -1,3 +1,26 @@
+### Release Notes - v1.4.4
+
+#### ✨ New Features
+*   **TRP List Management:** Implemented dedicated "Save TRP List" and "Load TRP List" functionalities within the TRP tab.
+    *   Users can now save and load pure TRP data (grid, elevation, name, status) independently of the main mission log.
+    *   The `Operation_GoldRush_TRP_List.json` file has been updated to reflect this pure TRP list format.
+*   **Unified Load File Functionality:** Implemented a single "Load File" button that intelligently detects and loads either a mission log or a TRP list from a selected JSON file.
+*   **Mortar Data Persistence:** Refactored mortar input handling to preserve existing mortar data, including locked fields, when the number of mortars is changed or a new mission is loaded.
+*   **Automatic TRP Mode Switch:** The "Calculate All TRPs" button in the TRP tab now automatically switches the main page's targeting mode to "Grid (TRP)" and navigates to the main tab.
+
+#### 🐛 Bug Fixes
+*   **TRP Log Saving:** Corrected an issue where TRP batch calculation results were saving gun information to the mission log. Only TRP location data is now saved.
+*   **TRP Log Display:** Fixed an issue where the Mission Log displayed default coordinates for TRP batch results instead of the original TRP grid.
+*   **Improved TRP Load Warning:** Enhanced the "Load TRP List" function to provide a more informative warning if a mission log file is mistakenly selected, guiding the user to the correct loading function.
+
+#### 🤖 Roo's Notes
+*   This release focused on refining the TRP management workflow and improving data persistence for mortar inputs. The separation of TRP list saving/loading from the main mission log provides greater flexibility for users.
+*   The `update_mortar_inputs` method was refactored to intelligently retain existing mortar data when the number of active mortars changes, addressing a key user feedback point regarding data loss.
+*   Improvements to TRP logging and loading ensure data accuracy and a smoother user experience when working with TRP lists.
+*   The automatic mode switch and tab navigation when calculating TRPs from the list streamline the user's workflow.
+
+---
+
 ### Release Notes - v1.4.3
 
 #### 🐛 Bug Fixes

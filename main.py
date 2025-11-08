@@ -104,7 +104,7 @@ class MortarCalculatorApp(tk.Tk):
  
         self.bind('<Control-Return>', lambda event: self.calculate_all())
         self.bind('<Control-n>', lambda event: self.new_mission())
-        self.bind('<Control-l>', lambda event: self.load_log_from_file())
+        self.bind('<Control-l>', lambda event: self.load_file_smart())
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
     def _get_float_or_default(self, tk_var, default_value=0.0):
@@ -422,6 +422,20 @@ class MortarCalculatorApp(tk.Tk):
 
         # Clear all widgets from the frame for a clean slate
         # Clear only the container for mortar inputs, not the count selector
+        # Store current mortar data before clearing
+        # Store current mortar data, prioritizing locked fields
+        preserved_locked_data = {}
+        for i in range(len(self.state.mortar_input_vars)):
+            mortar_vars = self.state.get_mortar_vars(i)
+            if mortar_vars['locked'].get():
+                preserved_locked_data[i] = {
+                    "grid": mortar_vars['grid'].get(),
+                    "elev": mortar_vars['elev'].get(),
+                    "callsign": mortar_vars['callsign'].get(),
+                    "locked": True
+                }
+
+        # Clear all widgets from the frame for a clean slate
         for widget in self.mortar_inputs_container.winfo_children():
             widget.destroy()
         self.state.clear_mortars()
@@ -438,6 +452,15 @@ class MortarCalculatorApp(tk.Tk):
         for i in range(num_mortars):
             self.state.add_mortar()
             mortar_vars = self.state.get_mortar_vars(i)
+
+            # Populate with preserved locked data if available for this index
+            if i in preserved_locked_data:
+                data = preserved_locked_data[i]
+                mortar_vars['grid'].set(data['grid'])
+                mortar_vars['elev'].set(data['elev'])
+                mortar_vars['callsign'].set(data['callsign'])
+                mortar_vars['locked'].set(data['locked'])
+            # Else, it will be initialized with default values from add_mortar()
 
             # Determine grid position (odd guns on left, even on right)
             row_base = (i // 2) * 2
@@ -620,6 +643,11 @@ class MortarCalculatorApp(tk.Tk):
         self.current_trp_calc_index = 0
         self.total_trps_to_calc = len(trps_to_calculate)
         self.trp_list_calc_in_progress = True
+
+        # Automatically switch to Grid (TRP) targeting mode on the main tab
+        self.state.targeting_mode_var.set("Grid")
+        self.on_targeting_mode_change()
+        self.notebook.select(0) # Switch to Main tab
  
         # Start the first TRP calculation
         self.state.correction_status_var.set(f"Calculating TRP 1 of {self.total_trps_to_calc}...")
@@ -696,14 +724,6 @@ class MortarCalculatorApp(tk.Tk):
                         # Construct a full mission data dictionary for logging as a regular entry
                         mission_data_for_log = {
                             "target_name": trp_name,
-                            "mortars": [
-                                {
-                                    "grid": m['grid'].get(),
-                                    "elev": m['elev'].get(),
-                                    "callsign": m['callsign'].get(),
-                                    "locked": m['locked'].get()
-                                } for m in self.state.mortar_input_vars # Use current mortar inputs
-                            ],
                             "num_mortars": self.state.num_mortars_var.get(),
                             "fire_mission_type": self.state.fire_mission_type_var.get(),
                             "targeting_mode": "Grid", # Always "Grid" for TRP calculations
@@ -718,11 +738,11 @@ class MortarCalculatorApp(tk.Tk):
                             "spotting_charge": self.state.spotting_charge_var.get(),
                             "faction": self.state.faction_var.get(),
                             "ammo": self.state.ammo_type_var.get(),
-                            "calculated_target_grid": f"{int(round(sol['target_coords'][0])):05d} {int(round(sol['target_coords'][1])):05d}",
+                            "calculated_target_grid": result.get('original_trp_grid', "00000 00000"),
                             "mortar_to_target_azimuth": f"{sol['azimuth']:.0f} MIL",
                             "mortar_to_target_dist": f"{sol['distance']:.0f} m",
                             "target_grid_str": trp_name, # Use TRP name as target_grid_str for consistency
-                            "target_elev": sol['target_elev'],
+                            "target_elev": result.get('original_trp_elev', 0.0),
                             "original_trp_grid": result.get('original_trp_grid', None), # Log original TRP grid
                             "original_trp_elev": result.get('original_trp_elev', None) # Log original TRP elevation
                         }
@@ -1041,17 +1061,41 @@ class MortarCalculatorApp(tk.Tk):
             if mortar_data.get("grid", "") != "0000000000":
                 loaded_mortars.append(mortar_data)
 
+        # Store current locked state and values before updating num_mortars and calling update_mortar_inputs
+        # This is crucial to prevent locked fields from being overwritten by loaded mission data
+        current_locked_mortar_data = {}
+        for i in range(len(self.state.mortar_input_vars)):
+            mortar_vars = self.state.get_mortar_vars(i)
+            if mortar_vars['locked'].get():
+                current_locked_mortar_data[i] = {
+                    "grid": mortar_vars['grid'].get(),
+                    "elev": mortar_vars['elev'].get(),
+                    "callsign": mortar_vars['callsign'].get(),
+                    "locked": True
+                }
+
         self.state.num_mortars_var.set(len(loaded_mortars) if loaded_mortars else 1)
-        self.update_mortar_inputs() # This will clear existing and add new based on num_mortars_var
-        
+        self.update_mortar_inputs() # This will clear existing and add new based on num_mortars_var, preserving locked data from current_locked_mortar_data
+
         for i, mortar_data in enumerate(loaded_mortars):
             if i < self.state.num_mortars_var.get(): # Ensure we don't go out of bounds
                 mortar_vars = self.state.get_mortar_vars(i)
-                mortar_vars['grid'].set(mortar_data.get("grid", ""))
-                mortar_vars['elev'].set(self._get_float_or_default(tk.DoubleVar(value=mortar_data.get("elev", 0))))
-                mortar_vars['callsign'].set(mortar_data.get("callsign", ""))
-                mortar_vars['locked'].set(mortar_data.get("locked", False))
-                self.toggle_mortar_lock(i)
+                
+                # If this mortar was previously locked, do NOT overwrite its grid and elev
+                if i in current_locked_mortar_data and current_locked_mortar_data[i]['locked']:
+                    # Preserve grid and elev from the locked state
+                    mortar_vars['grid'].set(current_locked_mortar_data[i]['grid'])
+                    mortar_vars['elev'].set(self._get_float_or_default(tk.DoubleVar(value=current_locked_mortar_data[i]['elev'])))
+                    mortar_vars['callsign'].set(current_locked_mortar_data[i]['callsign'])
+                    mortar_vars['locked'].set(True) # Ensure it remains locked
+                else:
+                    # Otherwise, load data from the mission
+                    mortar_vars['grid'].set(mortar_data.get("grid", ""))
+                    mortar_vars['elev'].set(self._get_float_or_default(tk.DoubleVar(value=mortar_data.get("elev", 0))))
+                    mortar_vars['callsign'].set(mortar_data.get("callsign", ""))
+                    mortar_vars['locked'].set(mortar_data.get("locked", False))
+                
+                self.toggle_mortar_lock(i) # Apply lock state to UI
 
         self.state.fire_mission_type_var.set("Regular") # Default to Regular on load
         self.state.targeting_mode_var.set(mission_data.get("targeting_mode", "Polar"))
@@ -1155,20 +1199,42 @@ class MortarCalculatorApp(tk.Tk):
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save mission log: {e}")
 
-    def load_log_from_file(self):
+
+    def load_file_smart(self):
+        """
+        Opens a file dialog, reads the selected JSON file, and intelligently
+        determines if it's a mission log or a TRP list, then loads it.
+        """
         filepath = filedialog.askopenfilename(
             filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
-            title="Load Mission Log"
+            title="Load Mission Log or TRP List"
         )
         if not filepath:
             return
+
         try:
             with open(filepath, 'r') as f:
-                log_data = json.load(f)
-            self.mission_log.load_log_data(log_data)
-            messagebox.showinfo("Success", "Mission log loaded successfully.")
+                data = json.load(f)
+
+            if not isinstance(data, list):
+                messagebox.showerror("Error", "Invalid file format. Expected a list of objects.")
+                return
+
+            if data and isinstance(data[0], dict) and "mortars" in data[0]:
+                # Appears to be a mission log
+                self.mission_log.load_log_data(data)
+                messagebox.showinfo("Success", "Mission log loaded successfully.")
+            elif data and isinstance(data[0], dict) and all(key in data[0] for key in ['grid', 'elev', 'name', 'status']):
+                # Appears to be a TRP list
+                self.trp_view.load_trp_list_from_data(data) # Call a new method in TRPView
+                messagebox.showinfo("Success", "TRP list loaded successfully.")
+            else:
+                messagebox.showwarning("Load Warning", "Could not determine file type. Please ensure it's a valid mission log or TRP list.")
+
+        except json.JSONDecodeError:
+            messagebox.showerror("Error", "Invalid JSON file. Please select a valid mission log or TRP list.")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load mission log: {e}")
+            messagebox.showerror("Error", f"An error occurred while loading the file: {e}")
 
     def load_map_image_and_view(self):
         map_name = self.state.selected_map_var.get()
